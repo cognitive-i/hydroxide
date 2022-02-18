@@ -233,6 +233,10 @@ func main() {
 	tlsCertKey := flag.String("tls-key", "", "Path to the certificate key to use for incoming connections")
 	tlsClientCA := flag.String("tls-client-ca", "", "If set, clients must provide a certificate signed by the given CA")
 
+	var letsEncryptHostnames config.HostnameList
+	flag.Var(&letsEncryptHostnames, "lets-encrypt-hostname", "Hostname for Let's Encrypt certificate.  Multiple hostnames can be supplied separated by commas")
+	letsEncryptCache := flag.String("lets-encrypt-key-cache", "", "Path to folder to store Let's Encrypt certificate key materials")
+
 	authCmd := flag.NewFlagSet("auth", flag.ExitOnError)
 	exportSecretKeysCmd := flag.NewFlagSet("export-secret-keys", flag.ExitOnError)
 	importMessagesCmd := flag.NewFlagSet("import-messages", flag.ExitOnError)
@@ -248,6 +252,8 @@ func main() {
 	tlsConfig, err := config.TLS(*tlsCert, *tlsCertKey, *tlsClientCA)
 	if err != nil {
 		log.Fatal(err)
+	} else if tlsConfig == nil {
+		tlsConfig = config.LetsEncryptTLS(letsEncryptHostnames, *letsEncryptCache)
 	}
 
 	cmd := flag.Arg(0)

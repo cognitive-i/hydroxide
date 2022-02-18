@@ -5,7 +5,42 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"strings"
+
+	"golang.org/x/crypto/acme/autocert"
 )
+
+type HostnameList []string
+
+func (hl *HostnameList) String() string {
+	if hl != nil {
+		strings.Join(*hl, ",")
+	}
+	return ""
+}
+
+func (hl *HostnameList) Set(value string) error {
+	if hl == nil {
+		panic("nil HostnameList variable")
+	}
+
+	*hl = strings.Split(value, ",")
+	return nil
+}
+
+func LetsEncryptTLS(hostnames HostnameList, cacheDirectory string) *tls.Config {
+	if (len(hostnames) > 0) && (cacheDirectory != "") {
+		certManager := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(hostnames...),
+			Cache:      autocert.DirCache(cacheDirectory),
+		}
+
+		return certManager.TLSConfig()
+	}
+
+	return nil
+}
 
 func TLS(certPath string, keyPath string, clientCAPath string) (*tls.Config, error) {
 	var tlsConfig *tls.Config
